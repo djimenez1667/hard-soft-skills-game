@@ -1,0 +1,827 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Campus Skills Pool Challenge</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600&family=Nunito:wght@400;700&display=swap" rel="stylesheet">
+    
+    <style>
+        body {
+            font-family: 'Nunito', sans-serif;
+            background-color: #f0fdf4; /* Light green campus feel */
+            overscroll-behavior: none; /* Prevent pull-to-refresh on mobile */
+            overflow: hidden;
+        }
+
+        h1, h2, h3, .brand-font {
+            font-family: 'Fredoka', sans-serif;
+        }
+
+        /* College Theme Background Details */
+        .campus-bg {
+            background: linear-gradient(135deg, #e0f2fe 0%, #dcfce7 100%);
+            position: relative;
+        }
+        
+        /* Animated Water Pools (Blobs) */
+        .water-pool {
+            position: relative;
+            box-shadow: inset 0 0 20px rgba(0,0,0,0.1), 0 10px 20px rgba(0,0,0,0.1);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+        }
+
+        .pool-hard {
+            background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+            animation: water-ripple 8s ease-in-out infinite;
+        }
+
+        .pool-soft {
+            background: linear-gradient(135deg, #a855f7 0%, #7e22ce 100%);
+            animation: water-ripple 9s ease-in-out infinite reverse;
+        }
+
+        .water-pool:after {
+            content: '';
+            position: absolute;
+            top: 5%; left: 5%; right: 5%; bottom: 5%;
+            border: 2px solid rgba(255,255,255,0.3);
+            animation: water-ripple 6s ease-in-out infinite alternate;
+            pointer-events: none;
+        }
+
+        /* Continuous morphing animation for water pools */
+        @keyframes water-ripple {
+            0% { border-radius: 60% 40% 30% 70% / 60% 30% 70% 40%; }
+            50% { border-radius: 30% 60% 70% 40% / 50% 60% 30% 60%; }
+            100% { border-radius: 60% 40% 30% 70% / 60% 30% 70% 40%; }
+        }
+
+        /* Active drop zone highlight */
+        .pool-active {
+            transform: scale(1.05);
+            box-shadow: 0 0 30px rgba(255, 255, 255, 0.6);
+        }
+
+        /* Tooltip and Design Details */
+        .tooltip {
+            position: absolute;
+            top: 110%;
+            left: 50%;
+            transform: translateX(-50%) scale(0.9);
+            opacity: 0;
+            background: rgba(15, 23, 42, 0.9);
+            color: white;
+            padding: 8px 12px;
+            border-radius: 8px;
+            font-size: 0.75rem;
+            white-space: normal;
+            min-width: 160px;
+            text-align: center;
+            pointer-events: none;
+            transition: all 0.2s;
+            z-index: 50;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        .tooltip::after {
+            content: '';
+            position: absolute;
+            bottom: 100%;
+            left: 50%;
+            margin-left: -5px;
+            border-width: 5px;
+            border-style: solid;
+            border-color: transparent transparent rgba(15, 23, 42, 0.9) transparent;
+        }
+        .word-card:hover .tooltip {
+            opacity: 1;
+            transform: translateX(-50%) scale(1);
+        }
+        
+        /* Scenery */
+        .sun {
+            position: absolute;
+            top: 30px;
+            right: 50px;
+            width: 80px;
+            height: 80px;
+            background: #fde047;
+            border-radius: 50%;
+            box-shadow: 0 0 40px #fef08a;
+            z-index: 0;
+        }
+        .cloud {
+            position: absolute;
+            background: white;
+            border-radius: 50px;
+            opacity: 0.7;
+            z-index: 0;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.05);
+        }
+        .cloud::before, .cloud::after {
+            content: '';
+            position: absolute;
+            background: white;
+            border-radius: 50%;
+        }
+
+        /* Word Cards */
+        .word-card {
+            touch-action: none; /* Crucial for custom touch dragging */
+            cursor: grab;
+            user-select: none;
+            transition: transform 0.1s;
+            position: relative;
+            z-index: 1;
+        }
+
+        .word-card:hover {
+            z-index: 50;
+        }
+        
+        .word-card:active {
+            cursor: grabbing;
+        }
+
+        .word-card.dragging {
+            position: absolute;
+            z-index: 1000;
+            pointer-events: none; /* Let pointer events pass through to drop zones */
+            transform: scale(1.1) rotate(2deg);
+            box-shadow: 0 15px 25px rgba(0,0,0,0.2);
+            transition: none; /* Disable transition while dragging to follow cursor immediately */
+        }
+
+        /* Feedback Animations */
+        @keyframes correct-splash {
+            0% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(0.5); opacity: 0.8; }
+            100% { transform: scale(0); opacity: 0; }
+        }
+        .anim-correct {
+            animation: correct-splash 0.5s ease-out forwards;
+        }
+
+        @keyframes wrong-shake {
+            0%, 100% { transform: translateX(0); }
+            20%, 60% { transform: translateX(-10px); }
+            40%, 80% { transform: translateX(10px); }
+        }
+        .anim-wrong {
+            animation: wrong-shake 0.5s ease-in-out;
+            background-color: #fee2e2 !important; /* light red */
+            color: #b91c1c !important;
+            border-color: #ef4444 !important;
+        }
+
+        /* Ripple Splash Effect Overlay */
+        .splash-effect {
+            position: absolute;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.6);
+            transform: scale(0);
+            animation: ripple 0.6s linear;
+            pointer-events: none;
+        }
+
+        @keyframes ripple {
+            to { transform: scale(4); opacity: 0; }
+        }
+    </style>
+</head>
+<body class="h-screen w-screen campus-bg text-slate-800 flex flex-col">
+
+    <!-- Background Scenery -->
+    <div class="sun"></div>
+    <div class="cloud" style="width: 140px; height: 50px; top: 12%; left: 8%;">
+        <div style="width: 70px; height: 70px; top: -35px; left: 20px; position: absolute; background: white; border-radius: 50%;"></div>
+        <div style="width: 50px; height: 50px; top: -20px; left: 70px; position: absolute; background: white; border-radius: 50%;"></div>
+    </div>
+    <div class="cloud" style="width: 100px; height: 35px; top: 25%; right: 20%; opacity: 0.5;">
+        <div style="width: 50px; height: 50px; top: -25px; left: 10px; position: absolute; background: white; border-radius: 50%;"></div>
+    </div>
+
+    <!-- Header -->
+    <header class="bg-white/90 backdrop-blur-md shadow-md p-4 z-10 relative flex justify-between items-center shrink-0 border-b border-slate-200">
+        <div class="flex items-center gap-3">
+            <div class="bg-blue-600 text-white w-10 h-10 rounded-full flex items-center justify-center font-bold text-xl brand-font shadow-sm">
+                🎓
+            </div>
+            <div>
+                <h1 class="text-xl md:text-2xl font-bold text-blue-900 leading-tight">Campus Skills Challenge</h1>
+                <p class="text-sm text-slate-500 font-semibold" id="level-indicator">Stage 1: Retail</p>
+            </div>
+        </div>
+        <div class="flex gap-4 items-center">
+            <div class="text-right">
+                <p class="text-xs text-slate-500 uppercase tracking-wide font-bold">Score</p>
+                <p class="text-2xl brand-font text-emerald-600 leading-none" id="score-display">0</p>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Game Area -->
+    <main class="flex-1 flex flex-col relative w-full max-w-6xl mx-auto p-4 md:p-6 gap-6 h-full overflow-hidden">
+        
+        <!-- Word Bank (Top) -->
+        <div class="bg-white/60 backdrop-blur-sm border-2 border-white rounded-2xl p-4 shadow-sm flex-1 max-h-[35%] md:max-h-[40%] flex flex-col relative z-20">
+            <h2 class="text-center font-bold text-slate-700 mb-2 brand-font flex items-center justify-center gap-2">
+                <span>📚</span> Word Bank 
+                <span class="text-sm font-normal bg-slate-200 px-2 py-0.5 rounded-full text-slate-600 ml-2" id="words-left">10 left</span>
+            </h2>
+            <p class="text-center text-xs md:text-sm text-slate-500 mb-4">Drag the skills below into the correct water pool. Hover for details!</p>
+            
+            <div id="word-bank" class="flex flex-wrap justify-center gap-2 md:gap-3 overflow-y-auto pb-4 items-start content-start flex-1 relative">
+                <!-- Words injected here via JS -->
+            </div>
+            
+            <!-- Check Answers Button -->
+            <div class="mt-2 flex justify-center hidden absolute bottom-4 left-0 right-0 z-30 pointer-events-none" id="check-action-container">
+                <button onclick="checkAnswers()" class="pointer-events-auto bg-emerald-500 hover:bg-emerald-600 text-white font-bold py-2 px-8 rounded-full shadow-xl transform hover:-translate-y-1 transition-all brand-font text-lg border-2 border-white">
+                    Check Answers ✓
+                </button>
+            </div>
+        </div>
+
+        <!-- Pools Area (Bottom) -->
+        <div class="flex flex-row justify-center gap-4 md:gap-12 flex-1 items-center pb-8 min-h-[40%] relative z-10">
+            
+            <!-- Hard Skills Pool -->
+            <div class="flex flex-col items-center w-1/2 max-w-[300px]">
+                <h3 class="brand-font text-blue-800 text-lg md:text-xl mb-3 drop-shadow-sm font-bold bg-white/90 px-4 py-1 rounded-full text-center shadow-sm">⚙️ Hard Skills</h3>
+                <div id="pool-hard" class="water-pool pool-hard w-40 h-40 md:w-64 md:h-64 relative border-4 border-blue-200/50 cursor-pointer" data-type="hard" onclick="showPoolModal('hard')">
+                    <span class="text-white/80 font-bold brand-font text-lg md:text-2xl pointer-events-none drop-shadow-md px-2 absolute text-center z-0">Specific &<br>Teachable</span>
+                </div>
+                <p class="text-xs text-slate-500 mt-3 text-center bg-white/50 px-3 py-1 rounded-full backdrop-blur-sm">Click pool to view/undo</p>
+            </div>
+
+            <!-- Soft Skills Pool -->
+            <div class="flex flex-col items-center w-1/2 max-w-[300px]">
+                <h3 class="brand-font text-purple-800 text-lg md:text-xl mb-3 drop-shadow-sm font-bold bg-white/90 px-4 py-1 rounded-full text-center shadow-sm">🧠 Soft Skills</h3>
+                <div id="pool-soft" class="water-pool pool-soft w-40 h-40 md:w-64 md:h-64 relative border-4 border-purple-200/50 cursor-pointer" data-type="soft" onclick="showPoolModal('soft')">
+                    <span class="text-white/80 font-bold brand-font text-lg md:text-2xl pointer-events-none drop-shadow-md px-2 absolute text-center z-0">Interpersonal &<br>Behaviors</span>
+                </div>
+                <p class="text-xs text-slate-500 mt-3 text-center bg-white/50 px-3 py-1 rounded-full backdrop-blur-sm">Click pool to view/undo</p>
+            </div>
+
+        </div>
+    </main>
+
+    <!-- Modals Overlay -->
+    <div id="modal-overlay" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center hidden">
+        <div class="bg-white rounded-3xl p-8 max-w-md w-full mx-4 shadow-2xl transform scale-95 transition-transform text-center relative overflow-hidden" id="modal-content">
+            <!-- Modal Body injected via JS -->
+        </div>
+    </div>
+
+    <script>
+        const levelData = [
+            {
+                industry: "Retail",
+                icon: "🛍️",
+                words: [
+                    { text: "Inventory Management", type: "hard", desc: "Tracking and controlling store stock." },
+                    { text: "POS Systems", type: "hard", desc: "Using cash registers and checkout software." },
+                    { text: "Merchandising", type: "hard", desc: "Arranging products to boost sales." },
+                    { text: "Cash Handling", type: "hard", desc: "Accurately processing money transactions." },
+                    { text: "Store Displays", type: "hard", desc: "Setting up visual promotions." },
+                    { text: "Customer Relations", type: "soft", desc: "Building rapport with shoppers." },
+                    { text: "Teamwork", type: "soft", desc: "Collaborating with fellow staff." },
+                    { text: "Adaptability", type: "soft", desc: "Adjusting to sudden changes in the store." },
+                    { text: "Patience", type: "soft", desc: "Remaining calm with difficult customers." },
+                    { text: "Communication", type: "soft", desc: "Clearly conveying information." }
+                ]
+            },
+            {
+                industry: "Customer Service",
+                icon: "🎧",
+                words: [
+                    { text: "CRM Software", type: "hard", desc: "Using customer relationship management tools." },
+                    { text: "Data Entry", type: "hard", desc: "Inputting customer information accurately." },
+                    { text: "Multilingual", type: "hard", desc: "Ability to speak multiple languages fluently." },
+                    { text: "Typing Speed", type: "hard", desc: "Typing words quickly and accurately." },
+                    { text: "Ticketing Systems", type: "hard", desc: "Managing and tracking customer support requests." },
+                    { text: "Empathy", type: "soft", desc: "Understanding and sharing the customer's feelings." },
+                    { text: "Active Listening", type: "soft", desc: "Paying full attention to the speaker." },
+                    { text: "Problem Solving", type: "soft", desc: "Finding effective solutions to issues." },
+                    { text: "De-escalation", type: "soft", desc: "Calming down angry or upset customers." },
+                    { text: "Positive Attitude", type: "soft", desc: "Maintaining a cheerful and helpful demeanor." }
+                ]
+            },
+            {
+                industry: "Medical",
+                icon: "⚕️",
+                words: [
+                    { text: "CPR Certified", type: "hard", desc: "Trained in cardiopulmonary resuscitation." },
+                    { text: "Phlebotomy", type: "hard", desc: "Drawing blood for clinical testing." },
+                    { text: "Patient Charting", type: "hard", desc: "Recording patient medical history." },
+                    { text: "Medical Terminology", type: "hard", desc: "Understanding specific medical vocabulary." },
+                    { text: "Vital Signs", type: "hard", desc: "Measuring heart rate, blood pressure, etc." },
+                    { text: "Compassion", type: "soft", desc: "Showing deep sympathy and care for patients." },
+                    { text: "Stress Management", type: "soft", desc: "Handling high-pressure medical situations well." },
+                    { text: "Attention to Detail", type: "soft", desc: "Noticing small but critical changes." },
+                    { text: "Work Ethics", type: "soft", desc: "Adhering to professional medical standards." },
+                    { text: "Time Management", type: "soft", desc: "Efficiently prioritizing patient care tasks." }
+                ]
+            },
+            {
+                industry: "Business",
+                icon: "💼",
+                words: [
+                    { text: "Financial Modeling", type: "hard", desc: "Creating representations of financial situations." },
+                    { text: "Data Analysis", type: "hard", desc: "Inspecting data to extract useful insights." },
+                    { text: "SEO / SEM", type: "hard", desc: "Optimizing content for search engines." },
+                    { text: "Project Management", type: "hard", desc: "Leading a team to achieve project goals." },
+                    { text: "Accounting", type: "hard", desc: "Managing financial records and taxes." },
+                    { text: "Leadership", type: "soft", desc: "Guiding and inspiring a team." },
+                    { text: "Negotiation", type: "soft", desc: "Reaching mutually beneficial agreements." },
+                    { text: "Strategic Thinking", type: "soft", desc: "Planning for long-term success." },
+                    { text: "Public Speaking", type: "soft", desc: "Presenting information to an audience." },
+                    { text: "Networking", type: "soft", desc: "Building professional relationships." }
+                ]
+            },
+            {
+                industry: "Engineering",
+                icon: "🏗️",
+                words: [
+                    { text: "CAD Software", type: "hard", desc: "Using computer-aided design programs." },
+                    { text: "Python Programming", type: "hard", desc: "Writing code in Python." },
+                    { text: "Circuit Design", type: "hard", desc: "Creating electrical circuit plans." },
+                    { text: "Structural Analysis", type: "hard", desc: "Evaluating the effects of loads on structures." },
+                    { text: "Quality Control", type: "hard", desc: "Ensuring products meet strict standards." },
+                    { text: "Critical Thinking", type: "soft", desc: "Logically analyzing complex problems." },
+                    { text: "Creativity", type: "soft", desc: "Thinking outside the box for new solutions." },
+                    { text: "Collaboration", type: "soft", desc: "Working closely together on complex systems." },
+                    { text: "Resourcefulness", type: "soft", desc: "Finding clever ways to overcome difficulties." },
+                    { text: "Work Ethic", type: "soft", desc: "Dedication and diligence in engineering tasks." }
+                ]
+            }
+        ];
+
+        let currentLevel = 0;
+        let score = 0;
+        let wordsRemaining = 0;
+        
+        // Pools Logic
+        let hardPoolContent = [];
+        let softPoolContent = [];
+        
+        // DOM Elements
+        const wordBankEl = document.getElementById('word-bank');
+        const levelIndicatorEl = document.getElementById('level-indicator');
+        const scoreDisplayEl = document.getElementById('score-display');
+        const wordsLeftEl = document.getElementById('words-left');
+        const modalOverlay = document.getElementById('modal-overlay');
+        const modalContent = document.getElementById('modal-content');
+        const checkActionContainer = document.getElementById('check-action-container');
+        
+        const poolHard = document.getElementById('pool-hard');
+        const poolSoft = document.getElementById('pool-soft');
+        const pools = [poolHard, poolSoft];
+
+        // Shuffle utility
+        function shuffleArray(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+            return array;
+        }
+
+        // Initialize Game
+        function initGame() {
+            currentLevel = 0;
+            score = 0;
+            scoreDisplayEl.textContent = score;
+            showIntroModal();
+        }
+
+        // Load Level
+        function loadLevel(levelIndex) {
+            const level = levelData[levelIndex];
+            levelIndicatorEl.innerHTML = `${level.icon} Stage ${levelIndex + 1}: <span class="font-bold text-slate-800">${level.industry}</span>`;
+            
+            // Clear word bank and pools arrays
+            wordBankEl.innerHTML = '';
+            hardPoolContent = [];
+            softPoolContent = [];
+            checkActionContainer.classList.add('hidden');
+            
+            // Get words and shuffle
+            let words = [...level.words];
+            words = shuffleArray(words);
+            wordsRemaining = words.length;
+            updateWordsLeft();
+
+            // Render words
+            words.forEach((wordObj) => {
+                addWordToBankDOM(wordObj);
+            });
+        }
+
+        function addWordToBankDOM(wordObj) {
+            const wordEl = document.createElement('div');
+            wordEl.className = 'word-card bg-white border-2 border-slate-200 text-slate-700 font-bold py-2 px-4 rounded-xl shadow-sm text-sm md:text-base whitespace-nowrap relative';
+            wordEl.textContent = wordObj.text;
+            
+            // Store data directly on element
+            wordEl.dataset.type = wordObj.type;
+            wordEl.dataset.text = wordObj.text;
+            wordEl.dataset.desc = wordObj.desc;
+            
+            // Add tooltip
+            const tooltip = document.createElement('div');
+            tooltip.className = 'tooltip';
+            tooltip.textContent = wordObj.desc;
+            wordEl.appendChild(tooltip);
+            
+            // Set initial random slight rotation for organic look
+            const rot = (Math.random() * 4) - 2;
+            wordEl.style.transform = `rotate(${rot}deg)`;
+            
+            setupDraggable(wordEl);
+            wordBankEl.appendChild(wordEl);
+        }
+
+        function updateScore(points = 0) {
+            score += points;
+            if (score < 0) score = 0; // Prevent score from going below 0
+            scoreDisplayEl.textContent = score;
+            
+            if (points > 0) {
+                // Score bump animation
+                scoreDisplayEl.style.transform = 'scale(1.5)';
+                scoreDisplayEl.style.color = '#10b981';
+                setTimeout(() => {
+                    scoreDisplayEl.style.transform = 'scale(1)';
+                    scoreDisplayEl.style.color = '';
+                }, 300);
+            } else if (points < 0) {
+                // Score drop animation for penalties
+                scoreDisplayEl.style.transform = 'scale(0.8)';
+                scoreDisplayEl.style.color = '#ef4444';
+                setTimeout(() => {
+                    scoreDisplayEl.style.transform = 'scale(1)';
+                    scoreDisplayEl.style.color = '';
+                }, 300);
+            }
+        }
+
+        function updateWordsLeft() {
+            wordsLeftEl.textContent = `${wordsRemaining} left`;
+            if (wordsRemaining === 0) {
+                checkActionContainer.classList.remove('hidden');
+            } else {
+                checkActionContainer.classList.add('hidden');
+            }
+        }
+
+        let draggedItem = null;
+        let startX, startY;
+
+        function setupDraggable(element) {
+            element.removeEventListener('pointerdown', handlePointerDown);
+            element.addEventListener('pointerdown', handlePointerDown);
+        }
+
+        function handlePointerDown(e) {
+            if (e.button !== 0 && e.pointerType === 'mouse') return; 
+            
+            const target = e.currentTarget;
+            draggedItem = target;
+            
+            const rect = draggedItem.getBoundingClientRect();
+            startX = e.clientX - rect.left;
+            startY = e.clientY - rect.top;
+
+            // Prepare dragging styles
+            draggedItem.classList.add('dragging');
+            draggedItem.style.width = rect.width + 'px'; 
+            
+            document.body.appendChild(draggedItem);
+            
+            draggedItem.style.left = (e.clientX - startX) + 'px';
+            draggedItem.style.top = (e.clientY - startY) + 'px';
+
+            document.addEventListener('pointermove', handlePointerMove, { passive: false });
+            document.addEventListener('pointerup', handlePointerUp);
+            
+            e.preventDefault();
+        }
+
+        function handlePointerMove(e) {
+            if (!draggedItem) return;
+            e.preventDefault(); 
+            
+            const x = e.clientX - startX;
+            const y = e.clientY - startY;
+            
+            draggedItem.style.left = x + 'px';
+            draggedItem.style.top = y + 'px';
+
+            checkPoolHover(e.clientX, e.clientY);
+        }
+
+        function handlePointerUp(e) {
+            if (!draggedItem) return;
+
+            document.removeEventListener('pointermove', handlePointerMove);
+            document.removeEventListener('pointerup', handlePointerUp);
+
+            const dropX = e.clientX;
+            const dropY = e.clientY;
+            
+            let targetPool = null;
+            pools.forEach(pool => {
+                const rect = pool.getBoundingClientRect();
+                if (dropX >= rect.left && dropX <= rect.right &&
+                    dropY >= rect.top && dropY <= rect.bottom) {
+                    targetPool = pool;
+                }
+                pool.classList.remove('pool-active');
+            });
+
+            if (targetPool) {
+                placeInPool(draggedItem, targetPool);
+            } else {
+                returnToBank();
+            }
+        }
+
+        function checkPoolHover(x, y) {
+            pools.forEach(pool => {
+                const rect = pool.getBoundingClientRect();
+                if (x >= rect.left && x <= rect.right && y >= rect.top && y <= rect.bottom) {
+                    pool.classList.add('pool-active');
+                } else {
+                    pool.classList.remove('pool-active');
+                }
+            });
+        }
+
+        function placeInPool(item, targetPool) {
+            const poolType = targetPool.dataset.type;
+            const wordData = {
+                text: item.dataset.text,
+                type: item.dataset.type,
+                desc: item.dataset.desc
+            };
+
+            // Add to virtual array instead of visible pool DOM
+            if (poolType === 'hard') {
+                hardPoolContent.push(wordData);
+            } else {
+                softPoolContent.push(wordData);
+            }
+
+            // Word disappears entirely when dropped
+            item.remove();
+            
+            wordsRemaining--;
+            updateWordsLeft();
+            createSplash(targetPool);
+            
+            draggedItem = null;
+        }
+
+        function returnToBank() {
+            draggedItem.classList.remove('dragging');
+            draggedItem.style.position = '';
+            draggedItem.style.left = '';
+            draggedItem.style.top = '';
+            draggedItem.style.width = '';
+            
+            const rot = (Math.random() * 4) - 2;
+            draggedItem.style.transform = `rotate(${rot}deg)`;
+            
+            wordBankEl.appendChild(draggedItem);
+            draggedItem = null;
+        }
+
+        function showPoolModal(poolType) {
+            const pool = poolType === 'hard' ? hardPoolContent : softPoolContent;
+            const titleColor = poolType === 'hard' ? 'text-blue-800' : 'text-purple-800';
+            const titleText = poolType === 'hard' ? '⚙️ Hard Skills in Pool' : '🧠 Soft Skills in Pool';
+
+            let html = `
+                <div class="mb-4">
+                    <h2 class="text-2xl brand-font font-bold ${titleColor} mb-2">${titleText}</h2>
+                    <p class="text-sm text-slate-500 mb-4">Click a skill tag to remove it from this pool and return it to the Word Bank.</p>
+                    <div class="flex flex-wrap gap-2 justify-center content-start max-h-[40vh] overflow-y-auto p-2">
+            `;
+
+            if (pool.length === 0) {
+                html += `<p class="text-slate-400 italic w-full text-center py-4">This pool is empty.</p>`;
+            } else {
+                pool.forEach((word, index) => {
+                    const tagStyles = poolType === 'hard' 
+                        ? 'bg-blue-100 hover:bg-red-100 text-blue-800 hover:text-red-600 border-blue-300' 
+                        : 'bg-purple-100 hover:bg-red-100 text-purple-800 hover:text-red-600 border-purple-300';
+                    html += `
+                        <button onclick="removeWordFromPool('${poolType}', ${index})" class="${tagStyles} border-2 font-bold py-2 px-4 rounded-full shadow-sm transition-colors text-sm flex items-center gap-2 transform hover:scale-105">
+                            ${word.text} 
+                            <span class="text-xs font-bold opacity-70">✖</span>
+                        </button>
+                    `;
+                });
+            }
+
+            html += `
+                    </div>
+                </div>
+                <button onclick="hideModal()" class="bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold py-3 px-8 rounded-full transition-colors w-full mt-2">Close</button>
+            `;
+            
+            showModal(html);
+        }
+
+        function removeWordFromPool(poolType, index) {
+            const pool = poolType === 'hard' ? hardPoolContent : softPoolContent;
+            const wordData = pool.splice(index, 1)[0]; // Remove from array
+
+            // Bring it back to the visual bank
+            addWordToBankDOM(wordData);
+            
+            wordsRemaining++;
+            updateWordsLeft();
+
+            // Refresh the modal UI
+            showPoolModal(poolType);
+        }
+
+        function checkAnswers() {
+            let allCorrect = true;
+            let returnedWords = [];
+
+            // Check Hard Pool backwards to safely splice
+            for (let i = hardPoolContent.length - 1; i >= 0; i--) {
+                if (hardPoolContent[i].type !== 'hard') {
+                    allCorrect = false;
+                    returnedWords.push(hardPoolContent.splice(i, 1)[0]);
+                }
+            }
+
+            // Check Soft Pool backwards
+            for (let i = softPoolContent.length - 1; i >= 0; i--) {
+                if (softPoolContent[i].type !== 'soft') {
+                    allCorrect = false;
+                    returnedWords.push(softPoolContent.splice(i, 1)[0]);
+                }
+            }
+
+            if (allCorrect) {
+                updateScore(100);
+                checkActionContainer.classList.add('hidden');
+                
+                setTimeout(() => {
+                    if (currentLevel < levelData.length - 1) {
+                        showLevelUpModal();
+                    } else {
+                        showVictoryModal();
+                    }
+                }, 500);
+            } else {
+                // Apply penalty for incorrect answers
+                let penalty = returnedWords.length * 10;
+                updateScore(-penalty);
+
+                // Return wrong words to bank
+                returnedWords.forEach(word => {
+                    addWordToBankDOM(word);
+                    wordsRemaining++;
+                });
+                updateWordsLeft();
+
+                // Briefly highlight returned words as wrong
+                const bankItems = Array.from(wordBankEl.children);
+                const newlyAdded = bankItems.slice(-returnedWords.length);
+                newlyAdded.forEach(el => {
+                    el.classList.add('anim-wrong');
+                    setTimeout(() => el.classList.remove('anim-wrong'), 600);
+                });
+
+                showModal(`
+                    <div class="text-6xl mb-4">🌊</div>
+                    <h2 class="text-2xl brand-font text-red-600 mb-2">Some skills washed back!</h2>
+                    <p class="text-slate-600 mb-2">You placed some skills in the wrong pool. We've returned them to the word bank so you can try again.</p>
+                    <p class="text-red-500 font-bold text-lg mb-6">Score Penalty: -${penalty} Points</p>
+                    <button onclick="hideModal()" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-8 rounded-full transition-colors w-full">Try Again</button>
+                `);
+            }
+        }
+
+        function createSplash(pool) {
+            const splash = document.createElement('div');
+            splash.className = 'splash-effect w-10 h-10';
+            splash.style.left = 'calc(50% - 20px)';
+            splash.style.top = 'calc(50% - 20px)';
+            pool.appendChild(splash);
+            setTimeout(() => splash.remove(), 600);
+        }
+
+        // Modals & UI flows
+        function showModal(contentHTML) {
+            modalContent.innerHTML = contentHTML;
+            modalOverlay.classList.remove('hidden');
+            setTimeout(() => modalContent.classList.remove('scale-95'), 10);
+        }
+
+        function hideModal() {
+            modalContent.classList.add('scale-95');
+            setTimeout(() => {
+                modalOverlay.classList.add('hidden');
+            }, 200);
+        }
+
+        function showIntroModal() {
+            showModal(`
+                <div class="text-6xl mb-4">🏫</div>
+                <h2 class="text-3xl brand-font text-blue-900 mb-2">Welcome to Campus!</h2>
+                <p class="text-slate-600 mb-6">Learn to distinguish between Hard Skills (specific, teachable abilities) and Soft Skills (interpersonal traits).</p>
+                <div class="bg-blue-50 p-4 rounded-xl text-sm text-left mb-6 text-slate-700">
+                    <strong>Instructions:</strong> Drag all skills into the water pools. The words will disappear when dropped. Click a pool to review what is inside it. Click "Check Answers" when finished!
+                </div>
+                <button onclick="hideModal(); loadLevel(0);" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-8 rounded-full w-full transition-colors shadow-lg transform hover:-translate-y-1">Start Challenge</button>
+            `);
+        }
+
+        function showLevelUpModal() {
+            const nextLevel = levelData[currentLevel + 1];
+            showModal(`
+                <div class="text-6xl mb-4">🌟</div>
+                <h2 class="text-3xl brand-font text-emerald-600 mb-2">Stage Cleared!</h2>
+                <p class="text-slate-600 mb-2">Great job separating those skills.</p>
+                <div class="my-6 py-4 border-t border-b border-slate-100">
+                    <p class="text-sm text-slate-500 uppercase font-bold tracking-widest mb-1">Next Up</p>
+                    <p class="text-xl brand-font text-blue-800">${nextLevel.icon} ${nextLevel.industry}</p>
+                </div>
+                <button onclick="nextLevelAction()" class="bg-emerald-500 hover:bg-emerald-600 text-white font-bold py-3 px-8 rounded-full w-full transition-colors shadow-lg transform hover:-translate-y-1">Continue</button>
+            `);
+        }
+
+        function nextLevelAction() {
+            hideModal();
+            currentLevel++;
+            loadLevel(currentLevel);
+        }
+
+        function showVictoryModal() {
+            shootConfetti();
+            showModal(`
+                <div class="text-6xl mb-4 relative z-10">🎓</div>
+                <h2 class="text-4xl brand-font text-purple-700 mb-2 relative z-10">Graduation Day!</h2>
+                <p class="text-slate-600 mb-6 relative z-10">You've mastered the difference between Hard and Soft skills across multiple industries.</p>
+                <div class="bg-purple-50 rounded-2xl p-6 mb-6 relative z-10">
+                    <p class="text-sm text-purple-800 uppercase font-bold mb-1">Final Score</p>
+                    <p class="text-5xl brand-font text-purple-600">${score}</p>
+                </div>
+                <button onclick="hideModal(); initGame();" class="relative z-10 bg-purple-600 hover:bg-purple-700 text-white font-bold py-3 px-8 rounded-full w-full transition-colors shadow-lg">Play Again</button>
+            `);
+        }
+
+        // Lightweight Confetti Effect for Victory
+        function shootConfetti() {
+            const colors = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6'];
+            for(let i=0; i<50; i++) {
+                const conf = document.createElement('div');
+                conf.style.position = 'absolute';
+                conf.style.width = Math.random() * 10 + 5 + 'px';
+                conf.style.height = Math.random() * 10 + 5 + 'px';
+                conf.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+                conf.style.left = '50%';
+                conf.style.top = '50%';
+                conf.style.borderRadius = Math.random() > 0.5 ? '50%' : '0';
+                conf.style.zIndex = '5';
+                conf.style.pointerEvents = 'none';
+                
+                modalContent.appendChild(conf);
+
+                const angle = Math.random() * Math.PI * 2;
+                const velocity = 50 + Math.random() * 100;
+                const tx = Math.cos(angle) * velocity;
+                const ty = Math.sin(angle) * velocity - 50; // Bias upward
+
+                conf.animate([
+                    { transform: 'translate(-50%, -50%) scale(1)', opacity: 1 },
+                    { transform: `translate(calc(-50% + ${tx}px), calc(-50% + ${ty}px)) scale(0) rotate(${Math.random()*360}deg)`, opacity: 0 }
+                ], {
+                    duration: 1000 + Math.random() * 1000,
+                    easing: 'cubic-bezier(0.25, 0.46, 0.45, 0.94)',
+                    fill: 'forwards'
+                });
+
+                setTimeout(() => conf.remove(), 2000);
+            }
+        }
+
+        // Start game on load
+        window.onload = initGame;
+
+    </script>
+</body>
+</html>
