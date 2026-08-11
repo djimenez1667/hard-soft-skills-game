@@ -85,7 +85,8 @@
             box-shadow: 0 4px 6px rgba(0,0,0,0.05);
         }
         .word-card:hover { 
-            z-index: 50; transform: translateY(-4px) scale(1.03);
+            z-index: 999; /* Boosted to guarantee tooltip visibility */
+            transform: translateY(-4px) scale(1.03);
             box-shadow: 0 12px 20px rgba(0,0,0,0.1); border-color: #93c5fd; border-bottom-color: #60a5fa;
         }
         .word-card:active { cursor: grabbing; border-bottom-width: 2px; transform: translateY(2px); }
@@ -101,18 +102,18 @@
         }
         .btn-3d:active { border-bottom-width: 2px; transform: translateY(4px); }
 
-        /* Tooltips */
+        /* Tooltips - Fixed positioning to pop UPWARDS and stay unblocked */
         .tooltip {
-            position: absolute; top: 125%; left: 50%; transform: translateX(-50%) scale(0.9);
+            position: absolute; bottom: 130%; left: 50%; transform: translateX(-50%) scale(0.9);
             opacity: 0; background: linear-gradient(135deg, #1e293b, #0f172a); color: white; padding: 10px 16px;
             border-radius: 12px; font-size: 0.85rem; font-weight: 700; white-space: normal; 
             min-width: 200px; text-align: center; pointer-events: none; 
-            transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275); z-index: 55;
+            transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275); z-index: 1000;
             box-shadow: 0 15px 25px -5px rgba(0, 0, 0, 0.3); border: 1px solid rgba(255,255,255,0.1);
         }
         .tooltip::after {
-            content: ''; position: absolute; bottom: 100%; left: 50%; margin-left: -8px;
-            border-width: 8px; border-style: solid; border-color: transparent transparent #1e293b transparent;
+            content: ''; position: absolute; top: 100%; left: 50%; margin-left: -8px;
+            border-width: 8px; border-style: solid; border-color: #1e293b transparent transparent transparent;
         }
         .word-card:hover .tooltip { opacity: 1; transform: translateX(-50%) scale(1); }
 
@@ -143,7 +144,7 @@
     </div>
 
     <!-- Header -->
-    <header class="bg-white/90 backdrop-blur-lg shadow-sm p-3 md:p-4 z-10 relative flex justify-between items-center shrink-0 border-b border-white">
+    <header class="bg-white/90 backdrop-blur-lg shadow-sm p-3 md:p-4 z-40 relative flex justify-between items-center shrink-0 border-b border-white">
         <!-- Logo -->
         <div class="flex items-center gap-3 w-1/4">
             <div class="bg-gradient-to-br from-blue-500 to-indigo-600 text-white w-11 h-11 md:w-12 md:h-12 rounded-2xl flex items-center justify-center font-bold text-2xl shadow-lg transform rotate-3 border-2 border-white">🎓</div>
@@ -153,7 +154,7 @@
         <!-- STAGE INDICATOR -->
         <div class="flex justify-center">
             <div id="level-indicator" class="bg-gradient-to-r from-indigo-600 to-purple-600 text-white px-5 md:px-7 py-2 rounded-full shadow-lg shadow-indigo-200/50 font-bold brand-font text-sm md:text-lg border-2 border-white/50 whitespace-nowrap transform transition-all">
-                Stage 1
+                Stage 1 of 5
             </div>
         </div>
 
@@ -183,8 +184,8 @@
     <!-- Main Game Area -->
     <main class="flex-1 flex flex-col relative w-full max-w-7xl mx-auto p-4 md:p-6 gap-6 md:gap-8 h-full z-10">
         
-        <!-- Skill Word Bank -->
-        <div class="glass-panel rounded-[2rem] p-5 md:p-6 flex-1 max-h-[35%] md:max-h-[38%] flex flex-col relative">
+        <!-- Skill Word Bank (overflow-visible fixes tooltip clipping) -->
+        <div class="glass-panel rounded-[2rem] p-5 md:p-6 w-full flex flex-col relative z-30 mb-4">
             <div class="flex justify-between items-center mb-4">
                 <h2 class="font-bold text-slate-700 brand-font text-xl md:text-2xl flex items-center gap-2">
                     <span class="text-2xl">📚</span> Skill Bank 
@@ -192,11 +193,11 @@
                 <span class="text-sm font-bold bg-white text-slate-600 px-4 py-1.5 rounded-full shadow-sm border border-slate-100" id="words-left"></span>
             </div>
             
-            <div id="word-bank" class="flex flex-wrap justify-center gap-3 md:gap-4 overflow-y-auto no-scrollbar pb-8 flex-1 items-start content-start relative">
+            <div id="word-bank" class="flex flex-wrap justify-center gap-3 md:gap-4 pb-8 items-start content-start relative overflow-visible min-h-[140px]">
                 <!-- Words injected dynamically -->
             </div>
             
-            <div class="mt-2 flex justify-center hidden absolute -bottom-6 left-0 right-0 z-30" id="check-action-container">
+            <div class="mt-2 flex justify-center hidden absolute -bottom-6 left-0 right-0 z-40" id="check-action-container">
                 <button onclick="checkAnswers()" class="btn-3d bg-gradient-to-r from-emerald-400 to-emerald-600 border-emerald-700 hover:from-emerald-500 hover:to-emerald-700 text-white font-extrabold py-3 px-12 rounded-full shadow-2xl brand-font text-xl border-4 border-t-white/50 border-l-white/50">
                     Check Answers ✓
                 </button>
@@ -204,7 +205,7 @@
         </div>
 
         <!-- Water Pools Area -->
-        <div class="flex flex-row justify-center gap-6 md:gap-24 flex-1 items-center pb-8 min-h-[40%]">
+        <div class="flex flex-row justify-center gap-6 md:gap-24 flex-1 items-center pb-8 min-h-[40%] z-20">
             
             <!-- Hard Skills Pool -->
             <div class="flex flex-col items-center w-1/2 max-w-[300px]">
@@ -232,8 +233,8 @@
     </main>
 
     <!-- Modal Overlay -->
-    <div id="modal-overlay" class="fixed inset-0 bg-slate-900/50 backdrop-blur-md z-50 flex items-center justify-center hidden opacity-0 transition-opacity duration-300">
-        <div class="bg-white rounded-[2rem] p-8 md:p-10 max-w-lg w-full mx-4 shadow-2xl transform scale-95 transition-transform duration-300 text-center border-4 border-white/50 relative overflow-hidden" id="modal-content">
+    <div id="modal-overlay" class="fixed inset-0 bg-slate-900/50 backdrop-blur-md z-50 flex items-center justify-center hidden opacity-0 transition-opacity duration-300 overflow-y-auto pt-10 pb-10">
+        <div class="bg-white rounded-[2rem] p-8 md:p-10 max-w-lg w-full mx-4 shadow-2xl transform scale-95 transition-transform duration-300 text-center border-4 border-white/50 relative" id="modal-content">
             <!-- Modal Body injected via JS -->
         </div>
     </div>
@@ -402,7 +403,8 @@
                     break;
                 }
                 case 'splash': {
-                    // Layer 1: Resonant watery bloop tone (pitch drop then snappy pop rise)
+                    // ENHANCED MULTI-LAYER SPLASH 
+                    // Layer 1: Resonant watery bloop tone (punchy pitch drop then snappy rise)
                     const osc = audioCtx.createOscillator();
                     const gain = audioCtx.createGain();
                     osc.type = 'sine';
@@ -419,7 +421,7 @@
                     osc.start(now);
                     osc.stop(now + 0.18);
 
-                    // Layer 2: High harmonic droplet ring for extra pop & clarity
+                    // Layer 2: High harmonic droplet ring for extra brightness
                     const osc2 = audioCtx.createOscillator();
                     const gain2 = audioCtx.createGain();
                     osc2.type = 'triangle';
@@ -435,7 +437,7 @@
                     osc2.start(now + 0.02);
                     osc2.stop(now + 0.10);
 
-                    // Layer 3: Filtered water spray noise burst for tactile liquid displacement
+                    // Layer 3: Filtered water spray noise burst for tactile texture
                     const bufferSize = audioCtx.sampleRate * 0.08;
                     const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
                     const data = buffer.getChannelData(0);
@@ -501,7 +503,7 @@
                     break;
                 }
                 case 'correct': {
-                    // Sparkling glockenspiel arpeggio chime (C5, E5, G5, C6)
+                    // Sparkling glockenspiel arpeggio chime
                     [523.25, 659.25, 783.99, 1046.50].forEach((freq, i) => {
                         playRhodesNote(freq, 0.7, 0.16, i * 0.06);
                     });
@@ -578,7 +580,6 @@
             wordBankEl.appendChild(el);
         }
 
-        // PROMINENT SCORE UPDATER WITH FLOATING POPUP DELTA
         function updateScore(points) { 
             score = Math.max(0, score + points); 
             scoreDisplayEl.textContent = score; 
@@ -591,7 +592,6 @@
                     scoreDisplayEl.style.color = '';
                 }, 350);
 
-                // Animated Floating +10 / -10 Score Delta Popup
                 const popupContainer = document.getElementById('score-popup-container');
                 if (popupContainer) {
                     const pop = document.createElement('div');
@@ -735,8 +735,8 @@
 
         function showIntroModal() {
             showModal(`
-                <div class="absolute -top-10 -left-10 w-32 h-32 bg-blue-100 rounded-full mix-blend-multiply filter blur-xl opacity-70"></div>
-                <div class="absolute -bottom-10 -right-10 w-32 h-32 bg-purple-100 rounded-full mix-blend-multiply filter blur-xl opacity-70"></div>
+                <div class="absolute -top-10 -left-10 w-32 h-32 bg-blue-100 rounded-full mix-blend-multiply filter blur-xl opacity-70 pointer-events-none"></div>
+                <div class="absolute -bottom-10 -right-10 w-32 h-32 bg-purple-100 rounded-full mix-blend-multiply filter blur-xl opacity-70 pointer-events-none"></div>
                 <div class="text-7xl mb-4 drop-shadow-md relative z-10">🏫</div>
                 <h2 class="text-4xl brand-font font-black bg-clip-text text-transparent bg-gradient-to-r from-blue-700 to-indigo-700 mb-2 relative z-10">Welcome to Campus!</h2>
                 <p class="text-slate-600 mb-6 font-bold relative z-10">Sort the skills into the correct pools. Drag words to place them.</p>
@@ -821,9 +821,8 @@
                     <button onclick="hideModal(); playSFX('pop');" class="btn-3d bg-slate-800 hover:bg-slate-900 border-slate-950 text-white font-extrabold py-4 px-8 rounded-full w-full">Try Again</button>
                 `);
             } else {
-                playSFX('win');
+                playSFX('correct');
                 fireConfetti();
-                setTimeout(fireConfetti, 1200);
                 checkActionContainer.classList.add('hidden');
                 setTimeout(() => {
                     if (currentLevel < levelData.length - 1) {
@@ -834,6 +833,10 @@
                             <button onclick="hideModal(); loadLevel(currentLevel + 1);" class="btn-3d bg-gradient-to-r from-emerald-400 to-emerald-600 border-emerald-700 hover:from-emerald-500 hover:to-emerald-700 text-white font-extrabold text-lg py-4 px-8 rounded-full w-full shadow-xl">Next Stage</button>
                         `);
                     } else {
+                        playSFX('win');
+                        setTimeout(fireConfetti, 600);
+                        setTimeout(fireConfetti, 1200);
+                        
                         let rankTitle = "Campus Scholar 🎓";
                         let rankColor = "from-blue-600 to-indigo-600";
                         if (score >= 450) {
@@ -883,9 +886,3 @@
     </script>
 </body>
 </html>
-```
-
-### Summary of Changes:
-1. **5 Stages Total:** Removed Stage 6 ("Creative & Design"), making the total progression 5 focused industry stages.
-2. **Softened Splash SFX:** Lowered the gain volume and smoothed out the pitch frequency curve for the pool splash sound so dropping skills into pools feels gentle and satisfying.
-3. **Graduation Ending Scene:** Added a grand diploma celebration modal upon clearing Stage 5, complete with dynamic title ranking (e.g., *Grandmaster of Skills*, *Campus Honor Graduate*), stage completion stats, and a double confetti burst!
