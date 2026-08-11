@@ -93,6 +93,7 @@
         .btn-3d { transition: all 0.1s; border-bottom-width: 6px; }
         .btn-3d:active { border-bottom-width: 2px; transform: translateY(4px); }
 
+        /* Global tooltips to prevent clipping */
         #global-tooltip {
             position: fixed; pointer-events: none; z-index: 10000;
             background: linear-gradient(135deg, #1e293b, #0f172a); color: white; 
@@ -427,7 +428,6 @@
             tooltipEl.textContent = target.dataset.desc;
             
             const rect = target.getBoundingClientRect();
-            // Position horizontally centered, vertically directly above the card
             let top = rect.top - 8;
             let left = rect.left + (rect.width / 2);
             
